@@ -3,7 +3,7 @@ const express = require("express");
 const translate = require('google-translate-api-x');
 const app = express();
 
-// Giữ cho Render không ngủ
+// Duy trì kết nối với Render để bot không ngủ
 const PORT = process.env.PORT || 10000;
 app.get("/", (req, res) => res.send("Bot is running!"));
 app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
@@ -17,29 +17,36 @@ const client = new Client({
 });
 
 client.on("ready", () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
+  console.log(`✅ Đã đăng nhập thành công: ${client.user.tag}`);
 });
 
 client.on("messageCreate", async (message) => {
+  // Không trả lời tin nhắn của bot khác
   if (message.author.bot) return;
 
   try {
-    // Thử dịch sang tiếng Việt trước để kiểm tra ngôn ngữ gốc
-    const checkLang = await translate(message.content, { to: 'vi' });
+    // Thử dịch để kiểm tra ngôn ngữ gốc
+    const res = await translate(message.content, { to: 'vi' });
+    const detectedLang = res.from.language.iso; // Lấy mã ngôn ngữ hệ thống nhận diện được
 
-    // Nếu câu gốc KHÔNG PHẢI tiếng Việt -> Dịch nó về tiếng Việt
-    if (checkLang.text.toLowerCase() !== message.content.toLowerCase()) {
-      return await message.reply(`🇮🇩 ➡️ 🇻🇳: ${checkLang.text}`);
+    console.log(`Tin nhắn: "${message.content}" - Ngôn ngữ: ${detectedLang}`);
+
+    // CHỈ DỊCH NẾU LÀ TIẾNG VIỆT HOẶC TIẾNG INDONESIA
+    if (detectedLang === 'vi') {
+      // Nếu là tiếng Việt -> Dịch sang tiếng Indonesia
+      const toIndo = await translate(message.content, { to: 'id' });
+      await message.reply(`🇻🇳 ➡️ 🇮🇩: ${toIndo.text}`);
     } 
-    
-    // Nếu câu gốc LÀ tiếng Việt -> Dịch sang tiếng Indonesia
-    const resIndo = await translate(message.content, { to: 'id' });
-    await message.reply(`🇻🇳 ➡️ 🇮🇩: ${resIndo.text}`);
+    else if (detectedLang === 'id') {
+      // Nếu là tiếng Indonesia -> Dịch về tiếng Việt
+      await message.reply(`🇮🇩 ➡️ 🇻🇳: ${res.text}`);
+    }
+    // Các trường hợp khác (như "huak chuak", tiếng Anh, v.v.) sẽ bị bỏ qua
 
   } catch (err) {
-    console.error("Lỗi dịch thuật:", err);
-    await message.reply("❌");
+    console.error("Lỗi hệ thống dịch:", err);
   }
 });
 
+// Sử dụng biến môi trường DISCORD_TOKEN đã cài trên Render
 client.login(process.env.DISCORD_TOKEN);

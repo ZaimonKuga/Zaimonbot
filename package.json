@@ -5,12 +5,11 @@
   "scripts": {
     "start": "node index.js"
   },
-  "dependencies": {
-    "body-parser": "^1.20.3",
-    "discord.js": "^14.15.3",
-    "express": "^4.19.2",
-    "libretranslate": "^1.0.1",
-    "node-fetch": "^2.7.0",
-    "@discordjs/util": "^1.1.0"
-  }
+"dependencies": {
+  "google-translate-api-x": "^10.7.2",
+  "discord.js": "^14.15.3",
+  "express": "^4.19.2",
+  "body-parser": "^1.20.3",
+  "@discordjs/util": "^1.1.0"
+}
 }

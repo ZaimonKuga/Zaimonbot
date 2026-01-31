@@ -1,3 +1,5 @@
+console.log("START BOT FILE");
+
 const express = require("express");
 const app = express();
 
@@ -10,8 +12,11 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Web server running on port ${PORT}`);
 });
+
 const { Client, GatewayIntentBits } = require("discord.js");
 const translate = require("@vitalets/google-translate-api");
+
+console.log("BEFORE CREATE CLIENT");
 
 const client = new Client({
   intents: [
@@ -21,29 +26,29 @@ const client = new Client({
   ],
 });
 
-const TOKEN = process.env.DISCORD_TOKEN;
+console.log("AFTER CREATE CLIENT");
+console.log("TOKEN EXISTS?", !!process.env.DISCORD_TOKEN);
 
 client.on("ready", () => {
-  console.log(`Logged in as ${client.user.tag}`);
+  console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   try {
-    // Nếu là tiếng Việt → dịch sang Indonesia
     if (/[àáạảãâầấậẩẫăằắặẳẵđèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]/i.test(message.content)) {
       const res = await translate(message.content, { to: "id" });
       message.reply(res.text);
-    }
-    // Ngược lại → dịch sang tiếng Việt
-    else {
+    } else {
       const res = await translate(message.content, { to: "vi" });
       message.reply(res.text);
     }
   } catch (err) {
-    console.error(err);
+    console.error("TRANSLATE ERROR:", err);
   }
 });
 
-client.login(TOKEN);
+console.log("BEFORE LOGIN");
+client.login(process.env.DISCORD_TOKEN);
+console.log("AFTER LOGIN CALL");

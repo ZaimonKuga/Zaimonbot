@@ -14,7 +14,6 @@ app.listen(PORT, () => {
 });
 
 const { Client, GatewayIntentBits } = require("discord.js");
-const translate = require("@vitalets/google-translate-api");
 
 console.log("BEFORE CREATE CLIENT");
 
@@ -36,16 +35,43 @@ client.on("ready", () => {
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
+  console.log("MSG:", message.content);
+
   try {
-    if (/[àáạảãâầấậẩẫăằắặẳẵđèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]/i.test(message.content)) {
-      const res = await translate(message.content, { to: "id" });
-      message.reply(res.text);
+    const res = await fetch("https://libretranslate.de/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        q: message.content,
+        source: "auto",
+        target: "vi",
+        format: "text",
+      }),
+    });
+
+    const data = await res.json();
+    if (!data.translatedText) return;
+
+    if (data.translatedText.toLowerCase() === message.content.toLowerCase()) {
+      const res2 = await fetch("https://libretranslate.de/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          q: message.content,
+          source: "auto",
+          target: "id",
+          format: "text",
+        }),
+      });
+
+      const data2 = await res2.json();
+      await message.reply(data2.translatedText);
     } else {
-      const res = await translate(message.content, { to: "vi" });
-      message.reply(res.text);
+      await message.reply(data.translatedText);
     }
   } catch (err) {
     console.error("TRANSLATE ERROR:", err);
+    await message.reply("❌ Lỗi dịch");
   }
 });
 

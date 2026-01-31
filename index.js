@@ -1,3 +1,4 @@
+const fetch = require("node-fetch");
 console.log("START BOT FILE");
 
 const express = require("express");

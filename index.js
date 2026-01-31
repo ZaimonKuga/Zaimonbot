@@ -23,22 +23,21 @@ client.on("ready", () => {
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  console.log("Tin nhắn gốc:", message.content);
-
   try {
-    // Dịch câu chat sang tiếng Việt
-    const res = await translate(message.content, { to: 'vi' });
+    // Thử dịch sang tiếng Việt trước để kiểm tra ngôn ngữ gốc
+    const checkLang = await translate(message.content, { to: 'vi' });
 
-    // Nếu câu gốc đã là tiếng Việt (dịch xong không đổi), dịch thử sang tiếng Anh
-    if (res.text.toLowerCase() === message.content.toLowerCase()) {
-      const resEn = await translate(message.content, { to: 'en' });
-      return await message.reply(`🇬🇧 English: ${resEn.text}`);
-    }
+    // Nếu câu gốc KHÔNG PHẢI tiếng Việt -> Dịch nó về tiếng Việt
+    if (checkLang.text.toLowerCase() !== message.content.toLowerCase()) {
+      return await message.reply(`🇮🇩 ➡️ 🇻🇳: ${checkLang.text}`);
+    } 
+    
+    // Nếu câu gốc LÀ tiếng Việt -> Dịch sang tiếng Indonesia
+    const resIndo = await translate(message.content, { to: 'id' });
+    await message.reply(`🇻🇳 ➡️ 🇮🇩: ${resIndo.text}`);
 
-    // Trả lời câu đã dịch
-    await message.reply(`🇻🇳 Tiếng Việt: ${res.text}`);
   } catch (err) {
-    console.error("Lỗi Google Translate:", err);
+    console.error("Lỗi dịch thuật:", err);
     await message.reply("❌");
   }
 });

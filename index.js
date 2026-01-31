@@ -1,22 +1,12 @@
-const fetch = require("node-fetch");
-console.log("START BOT FILE");
-
+const { Client, GatewayIntentBits } = require("discord.js");
 const express = require("express");
+const translate = require('google-translate-api-x');
 const app = express();
 
-const PORT = process.env.PORT || 3000;
-
-app.get("/", (req, res) => {
-  res.send("Bot is running!");
-});
-
-app.listen(PORT, () => {
-  console.log(`Web server running on port ${PORT}`);
-});
-
-const { Client, GatewayIntentBits } = require("discord.js");
-
-console.log("BEFORE CREATE CLIENT");
+// Giữ cho Render không ngủ
+const PORT = process.env.PORT || 10000;
+app.get("/", (req, res) => res.send("Bot is running!"));
+app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
 
 const client = new Client({
   intents: [
@@ -26,9 +16,6 @@ const client = new Client({
   ],
 });
 
-console.log("AFTER CREATE CLIENT");
-console.log("TOKEN EXISTS?", !!process.env.DISCORD_TOKEN);
-
 client.on("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 });
@@ -36,46 +23,24 @@ client.on("ready", () => {
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  console.log("MSG:", message.content);
+  console.log("Tin nhắn gốc:", message.content);
 
   try {
-    const res = await fetch("https://libretranslate.de/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        q: message.content,
-        source: "auto",
-        target: "vi",
-        format: "text",
-      }),
-    });
+    // Dịch câu chat sang tiếng Việt
+    const res = await translate(message.content, { to: 'vi' });
 
-    const data = await res.json();
-    if (!data.translatedText) return;
-
-    if (data.translatedText.toLowerCase() === message.content.toLowerCase()) {
-      const res2 = await fetch("https://libretranslate.de/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          q: message.content,
-          source: "auto",
-          target: "id",
-          format: "text",
-        }),
-      });
-
-      const data2 = await res2.json();
-      await message.reply(data2.translatedText);
-    } else {
-      await message.reply(data.translatedText);
+    // Nếu câu gốc đã là tiếng Việt (dịch xong không đổi), dịch thử sang tiếng Anh
+    if (res.text.toLowerCase() === message.content.toLowerCase()) {
+      const resEn = await translate(message.content, { to: 'en' });
+      return await message.reply(`🇬🇧 English: ${resEn.text}`);
     }
+
+    // Trả lời câu đã dịch
+    await message.reply(`🇻🇳 Tiếng Việt: ${res.text}`);
   } catch (err) {
-    console.error("TRANSLATE ERROR:", err);
-    await message.reply("❌ Lỗi dịch");
+    console.error("Lỗi Google Translate:", err);
+    await message.reply("❌");
   }
 });
 
-console.log("BEFORE LOGIN");
 client.login(process.env.DISCORD_TOKEN);
-console.log("AFTER LOGIN CALL");
